@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<ivy-module version="2.0">
+    <info organisation="com.example" module="common-libs"/>
+    <configurations>
+        <conf name="compile" transitive="true" visibility="public" />       
+    </configurations>
+    <dependencies>       
+        <dependency org="org.apache.solr" name="solr-core" rev="4.0.0"
+                    conf="compile"/>
+        <dependency org="junit" name="junit" rev="4.3"
+                    conf="compile"/>
+    </dependencies>
+</ivy-module>
