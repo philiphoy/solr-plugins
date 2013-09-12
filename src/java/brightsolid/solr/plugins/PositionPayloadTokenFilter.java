@@ -8,7 +8,7 @@ import org.apache.lucene.analysis.tokenattributes.PayloadAttribute;
 import org.apache.lucene.util.BytesRef;
 
 public final class PositionPayloadTokenFilter extends TokenFilter {	 
-	  private final PayloadAttribute payAtt = addAttribute(PayloadAttribute.class);
+	  private final PayloadAttribute payAtt = addAttribute(PayloadAttribute.class);	 
 	  private int Position = 0;
 	  public PositionPayloadTokenFilter(TokenStream input) {
 	    super(input); 
@@ -16,7 +16,7 @@ public final class PositionPayloadTokenFilter extends TokenFilter {
 	 
 	  @Override
 	  public boolean incrementToken() throws IOException {
-	    if (input.incrementToken()) {	
+	    if (input.incrementToken()) {
 	    	 Position = Position + 1;
 		     final byte[] posn = encodeInt(Position);	
 		     final BytesRef pl= new BytesRef(posn);

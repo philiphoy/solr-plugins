@@ -5,7 +5,7 @@
         <conf name="compile" transitive="true" visibility="public" />       
     </configurations>
     <dependencies>       
-        <dependency org="org.apache.solr" name="solr-core" rev="4.1.0"
+        <dependency org="org.apache.solr" name="solr" rev="4.4.0"
                     conf="compile"/>
         <dependency org="junit" name="junit" rev="4.3"
                     conf="compile"/>

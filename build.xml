@@ -22,7 +22,7 @@
     </target>
 
     <target name="jar" depends="compile">
-        <jar basedir="${build.dir}" destfile="${store.dir}/solr-plugins.jar" />
+        <jar basedir="${build.dir}" destfile="${store.dir}/brightsolid-plugins.jar" />
     </target>
 
 </project>
