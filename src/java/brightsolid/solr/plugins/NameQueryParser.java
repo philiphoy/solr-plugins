@@ -31,7 +31,7 @@ public class NameQueryParser extends LuceneQParser {
   private String value;
   private float synboost = 0.8f;
   private float initialboost = 0.2f;
-  private float phonboost = 0.1f;
+  private float phoneticboost = 0.1f;
   private float nullboost = 0.01f;
   private float fuzzyboost = 0.2f;
 
@@ -56,8 +56,8 @@ public class NameQueryParser extends LuceneQParser {
     if (getParam("initialboost") != null) {
       initialboost = Float.parseFloat(getParam("initialboost"));
     }
-    if (getParam("phonboost") != null) {
-      phonboost = Float.parseFloat(getParam("phonboost"));
+    if (getParam("phoneticboost") != null) {
+      phoneticboost = Float.parseFloat(getParam("phoneticboost"));
     }
     if (getParam("nullboost") != null) {
       nullboost = Float.parseFloat(getParam("nullboost"));
@@ -160,7 +160,7 @@ public class NameQueryParser extends LuceneQParser {
       SpanQuery pq = new SpanTermQuery(new Term(field + "_an_rs", val));
       Query spq = new SpanTargetPositionQuery(pq, position);
       spq = addGenderQuery(spq);
-      spq.setBoost(phonboost);
+      spq.setBoost(phoneticboost);
       dq.add(spq);
     }
 
