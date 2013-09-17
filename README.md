@@ -29,26 +29,27 @@ In query url include a payload position query.
 ```
 	&q=_query_:"{!namequery f=field }my name"
 ```	
-* **f** root field name to use for teh search
-* **tie** is the tiebreaker for a DisjunctionMax of each clause
-* **synboost** is the boost to apply to the synonym subsearch
-* **initialboost** is the boost to apply to the search for initials of the search term
-* **phonboost** is boost to apply to the phonetic subserach
-* **nullboost** is the boost to apply to null boost (actually search for -)
-* **fuzzyboost** is the boost to apply to the fuzzt subsearch
-* **usefuzzy** add fuzzy subsearch
-* **usephonetic** add phonetic subsearch
-* **usenull** add null search (actually search for -)
-* **useinitial** add inital search
+* **f**  root field name to use for the search 
+* **tie** (0.01) is the tiebreaker for a DisjunctionMax of each clause
+* **usesyn** (true) add synonym search
+* **synboost** (0.8) is the boost to apply to the synonym subsearch
+* **useinitial** (true) add inital search
+* **initialboost** (0.2) is the boost to apply to the search for initials of the search term
+* **usephonetic** (true) add phonetic subsearch
+* **usefuzzy** (true) add fuzzy subsearch
+* **fuzzyboost** (0.2) is the boost to apply to the fuzzy subsearch
+* **phonboost** (0.1) is boost to apply to the phonetic subserach
+* **usenull** (true) add null search (actually search for -)
+* **nullboost** (0.01) is the boost to apply to null boost (actually search for -)
 * **gendervalue** will add required gender term query to the fuzzy, initial, null and phontic subseraches
-
+* **genderfield** (Gender__facet_text) will add required gender term query to the fuzzy, initial, null and phontic subseraches
 
 In essence the parser works as follows, for each clause in query it will create a DisjunctionMaxQuery of various subqueries with varying boosts
 each with an aditional boost for when the position of the term in the field matches the clause in the query. Each disjunction is then added to a boolean query. 
 
 For example the query:
 
-&q=_query_:"{!namequery f=field }my name"
+&q=_query_:"{!namequery f=name__fname } my name"
 
 would parse to this form of query:
 

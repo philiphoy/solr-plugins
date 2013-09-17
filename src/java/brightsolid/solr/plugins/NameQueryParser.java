@@ -39,9 +39,10 @@ public class NameQueryParser extends LuceneQParser {
   private boolean usephonetic = true;
   private boolean usenull = true;
   private boolean useinitial = true;
-
+  private boolean usesyn = true;
   private String gendervalue;
   private String genderfield;
+
 
   public NameQueryParser(String arg0, SolrParams arg1, SolrParams arg2, SolrQueryRequest arg3) {
     super(arg0, arg1, arg2, arg3);
@@ -63,6 +64,9 @@ public class NameQueryParser extends LuceneQParser {
     }
     if (getParam("fuzzyboost") != null) {
       fuzzyboost = Float.parseFloat(getParam("fuzzyboost"));
+    }
+    if (getParam("usesyn") != null) {
+      usesyn = Boolean.parseBoolean(getParam("usesyn"));
     }
     if (getParam("usefuzzy") != null) {
       usefuzzy = Boolean.parseBoolean(getParam("usefuzzy"));
@@ -133,12 +137,14 @@ public class NameQueryParser extends LuceneQParser {
     Query saq = new SpanTargetPositionQuery(aq, position);
     dq.add(saq);
 
-    // Add synonyms
-    SpanQuery sq = new SpanTermQuery(new Term(field + "_syn", val));
-    Query ssq = new SpanTargetPositionQuery(sq, position);
-    ssq.setBoost(synboost);
-    dq.add(ssq);
-
+    if(usesyn){
+      // Add synonyms
+      SpanQuery sq = new SpanTermQuery(new Term(field + "_syn", val));
+      Query ssq = new SpanTargetPositionQuery(sq, position);
+      ssq.setBoost(synboost);
+      dq.add(ssq);
+    }
+ 
     if (useinitial) {
       // Add initial
       String firstChar = val.substring(0, 1);
