@@ -7,3 +7,5 @@
 .classpath
 .project
 .gitattributes
+
+/bin/*

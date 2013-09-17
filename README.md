@@ -2,7 +2,8 @@
 
 ## Features
 * Due to distributed search requirements the plugin disables idf.
-* Enables query time boosting on position of term in text.
+* Enables query time boosting on position of term in text and a name search algorithm.
+
 
 ## Installation
 1. get source.
@@ -15,23 +16,52 @@
 ```xml
    <similarity class="brightsolid.solr.plugins.BrightSolidSimilarity" />
 ```
-and add the index time filter to analyser where desired.
-```xml
-   <filter class="brightsolid.solr.plugins.PositionPayloadTokenFilterFactory" />
-```
+
 2. in the solr's solrconfig.xml add the custom parser.
 
 ```xml
-   <queryParser name="payload" class="brightsolid.solr.plugins.PayloadTermQueryPlugin"/>
+   <queryParser name="namequery" class="brightsolid.solr.plugins.NameQueryPlugin"/>
 ```
 
 ## Use 
 In query url include a payload position query.
 
 ```
-	&q=_query_:"{!payload f=field mult=0.9 posn=2}second_word"
+	&q=_query_:"{!namequery f=field }my name"
 ```	
+* **f** root field name to use for teh search
+* **tie** is the tiebreaker for a DisjunctionMax of each clause
+* **synboost** is the boost to apply to the synonym subsearch
+* **initialboost** is the boost to apply to the search for initials of the search term
+* **phonboost** is boost to apply to the phonetic subserach
+* **nullboost** is the boost to apply to null boost (actually search for -)
+* **fuzzyboost** is the boost to apply to the fuzzt subsearch
+* **usefuzzy** add fuzzy subsearch
+* **usephonetic** add phonetic subsearch
+* **usenull** add null search (actually search for -)
+* **useinitial** add inital search
+* **gendervalue** will add required gender term query to the fuzzy, initial, null and phontic subseraches
 
-* mult parameter is optional and will multiply the boost score by some float value.
-* posn is the target position for the term in the text.
+
+In essence the parser works as follows, for each clause in query it will create a DisjunctionMaxQuery of various subqueries with varying boosts
+each with an aditional boost for when the position of the term in the field matches the clause in the query. Each disjunction is then added to a boolean query. 
+
+For example the query:
+
+&q=_query_:"{!namequery f=field }my name"
+
+would parse to this form of query:
+
++( 	spanTargPos(name__fname_an:my,0) | <br/>
+	spanTargPos(name__fname_syn:my,0)^0.8 | <br/>
+	spanTargPos(name__fname_an:m,0)^0.2 | <br/>
+	spanTargPos(name__fname_an_rs:my,0)^0.1 | <br/>
+	spanTargPos(SpanMultiTermQueryWrapper(name__fname_an:my~2),0)^0.2 | <br/>
+	spanTargPos(name__fname:-,0)^0.01)~0.01 <br/>
+ +( spanTargPos(name__fname_an:name,1) | <br/>
+	spanTargPos(name__fname_syn:name,1)^0.8 | <br/>
+	spanTargPos(name__fname_an:n,1)^0.2 | <br/>
+	spanTargPos(name__fname_an_rs:name,1)^0.1 | <br/>
+	spanTargPos(SpanMultiTermQueryWrapper(name__fname_an:name~2),1)^0.2 | <br/>
+	spanTargPos(name__fname:-,1)^0.01)~0.01 <br/>
 

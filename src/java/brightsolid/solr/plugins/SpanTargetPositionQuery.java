@@ -30,7 +30,6 @@ import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanScorer;
 import org.apache.lucene.search.spans.SpanWeight;
 import org.apache.lucene.search.spans.Spans;
-import org.apache.lucene.search.spans.TermSpans;
 import org.apache.lucene.util.Bits;
 
 import org.apache.lucene.util.ToStringUtils;
@@ -51,7 +50,7 @@ public class SpanTargetPositionQuery extends SpanQuery implements Cloneable {
     this.match = match;
     this.target = target;
   }
-
+ 
   /**
    * @return the SpanQuery whose matches are filtered.
    * */
@@ -91,6 +90,7 @@ public class SpanTargetPositionQuery extends SpanQuery implements Cloneable {
     StringBuilder buffer = new StringBuilder();
     buffer.append("spanTargPos(");
     buffer.append(match.toString(field));
+    buffer.append(",");
     buffer.append(target);
     buffer.append(")");
     buffer.append(ToStringUtils.boost(getBoost()));

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<schema name="tiny" version="1.1">
+<types>	   
+		<!-- The StrField type is not analyzed, but indexed/stored verbatim. -->
+		<fieldType name="string" class="solr.StrField" sortMissingLast="true" omitNorms="true"/>
+		<fieldType name="boolean" class="solr.BoolField" sortMissingLast="true" omitNorms="true"/>
+		<!--Binary data type. The data should be sent/retrieved in as Base64 encoded Strings -->
+		<fieldtype name="binary" class="solr.BinaryField"/>
+		<!--
+		  Default numeric field types. For faster range queries, consider the tint/tfloat/tlong/tdouble types.
+		-->
+		
+		<fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="float" class="solr.TrieFloatField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="long" class="solr.TrieLongField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="double" class="solr.TrieDoubleField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+	 
+		<fieldType name="tint" class="solr.TrieIntField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="tfloat" class="solr.TrieFloatField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="tlong" class="solr.TrieLongField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="tdouble" class="solr.TrieDoubleField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="date" class="solr.TrieDateField" omitNorms="true" precisionStep="0" positionIncrementGap="0"/>
+		<!-- A Trie based date field for faster date range queries and date faceting. -->
+		<fieldType name="tdate" class="solr.TrieDateField" omitNorms="true" precisionStep="6" positionIncrementGap="0"/>
+		<!-- since fields of this type are by default not stored or indexed, any data added to them will be ignored outright.  --> 
+		<fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
+		<!-- A specialized field for geospatial search. If indexed, this fieldType must not be multivalued. -->
+		<fieldType name="latLon" class="solr.LatLonType" subFieldType="double"/>
+		
+		
+		<!-- split by hyphens or spaces and synonym analysed -->
+		<fieldType name="firstname_synalysed" class="solr.TextField" positionIncrementGap="100">
+			<analyzer type="index">
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />			
+				<filter class="solr.PatternReplaceFilterFactory" pattern=" \s*" replacement="-" replace="all"/>
+				<filter class="solr.TrimFilterFactory" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" catenateAll="0" stemEnglishPossessive="0" />			
+				<filter class="solr.SynonymFilterFactory" synonyms="${name_syn_file:firstnames.csv}" ignoreCase="true" expand="true"/>
+			</analyzer>
+			<analyzer type="query">
+				<tokenizer class="solr.StandardTokenizerFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.TrimFilterFactory" />
+			</analyzer>
+		</fieldType>		
+		<!-- split by hyphens or spaces -->
+		<fieldType name="firstname_analysed" class="solr.TextField" positionIncrementGap="100">
+			<analyzer type="index">
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />			
+				<filter class="solr.PatternReplaceFilterFactory" pattern=" \s*" replacement="-" replace="all"/>
+				<filter class="solr.TrimFilterFactory" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" catenateAll="0" stemEnglishPossessive="0" />	
+			</analyzer>
+			<analyzer type="query">
+				<tokenizer class="solr.WhitespaceTokenizerFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.TrimFilterFactory" />
+			</analyzer>
+		</fieldType>
+		<fieldType name="firstname_analysed_initial" class="solr.TextField" positionIncrementGap="100">
+			<analyzer>
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />			
+				<filter class="solr.PatternReplaceFilterFactory" pattern=" \s*" replacement="-" replace="all"/>
+				<filter class="solr.TrimFilterFactory" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" catenateAll="0" stemEnglishPossessive="0" />	
+				<filter class="solr.EdgeNGramFilterFactory" minGramSize="1" maxGramSize="1" side="front"/>
+			</analyzer>
+		</fieldType>
+		<fieldType name="firstname_analysed_rs" class="solr.TextField" positionIncrementGap="100">
+			<analyzer>
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.ASCIIFoldingFilterFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />			
+				<filter class="solr.PatternReplaceFilterFactory" pattern=" \s*" replacement="-" replace="all"/>
+				<filter class="solr.TrimFilterFactory" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" catenateAll="0" stemEnglishPossessive="0" />	
+				<filter class="solr.PhoneticFilterFactory" encoder="RefinedSoundex" inject="false"/>
+			</analyzer>
+		</fieldType>
+		<!-- split by hyphens or spaces with concatenated version and synonym analysed. smith-jones => smith,jones,smithjones,johns etc. -->
+		<fieldType name="lastname_synalysed" class="solr.TextField" positionIncrementGap="100">
+			<analyzer type="index">
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.ASCIIFoldingFilterFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />			
+				<filter class="solr.PatternReplaceFilterFactory" pattern=" \s*" replacement="-" replace="all"/>
+				<filter class="solr.TrimFilterFactory" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" catenateAll="1" stemEnglishPossessive="0" />				
+				<filter class="solr.SynonymFilterFactory" synonyms="${name_syn_file:surnames.csv}" ignoreCase="true" expand="true"/>
+			</analyzer>
+			<analyzer type="query">
+				<tokenizer class="solr.StandardTokenizerFactory"/>
+				<filter class="solr.ASCIIFoldingFilterFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.TrimFilterFactory" />		
+			</analyzer>
+		</fieldType>
+		<!-- split by hyphens or spaces with concatenated version -->
+		<fieldType name="lastname_analysed" class="solr.TextField" positionIncrementGap="100">
+			 <analyzer>
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.ASCIIFoldingFilterFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />			
+				<filter class="solr.PatternReplaceFilterFactory" pattern=" \s*" replacement="-" replace="all"/>
+				<filter class="solr.TrimFilterFactory" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" catenateAll="1" stemEnglishPossessive="0" />
+			</analyzer>
+		</fieldType>
+		<fieldType name="lastname_analysed_rs" class="solr.TextField" positionIncrementGap="100">
+			<analyzer>
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.ASCIIFoldingFilterFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.PatternReplaceFilterFactory" pattern=" \s*" replacement="-" replace="all"/>
+				<filter class="solr.TrimFilterFactory" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" catenateAll="1" stemEnglishPossessive="0" />	
+				<filter class="solr.PhoneticFilterFactory" encoder="RefinedSoundex" inject="false"/>
+			</analyzer>
+		</fieldType>
+		<fieldType name="name_string" class="solr.TextField" positionIncrementGap="100">
+			<analyzer >
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.ASCIIFoldingFilterFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.TrimFilterFactory" />
+			</analyzer>		
+		</fieldType>
+		<fieldType name="analysed" class="solr.TextField" positionIncrementGap="100">
+			<analyzer >
+				<tokenizer class="solr.StandardTokenizerFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.TrimFilterFactory" />		
+			</analyzer>
+		</fieldType>
+		<fieldType name="text_facet" class="solr.TextField" positionIncrementGap="100">
+			<analyzer>
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.TrimFilterFactory" /> 
+			</analyzer>
+		</fieldType>
+	</types>
+
+	<fields> 		
+		<field name="Id" type="string" indexed="true" stored="true" required="true" />	 	
+		<field name="_version_" type="long" indexed="true" stored="true" multiValued="false"/>
+
+		<dynamicField name="*__string" type="string" indexed="true" stored="true" omitNorms="true" />
+		<dynamicField name="*__facet_text" type="text_facet" indexed="true" stored="false" omitNorms="true" />
+		<dynamicField name="*__facet_text_ordered" type="text_facet" indexed="true" stored="false" omitNorms="true" />
+		<dynamicField name="*__text" type="analysed" indexed="true" stored="true" omitNorms="true" />	
+		<dynamicField name="*__int" type="int" indexed="true" stored="true" omitNorms="true"  />
+		<dynamicField name="*__double" type="double" indexed="true" stored="true" omitNorms="true"  />
+		<dynamicField name="*__year" type="tint" indexed="true" stored="true" omitNorms="true" />
+		<dynamicField name="*__date" type="date" indexed="true" stored="true" omitNorms="true" />
+		<dynamicField name="*__float" type="float" indexed="true" stored="true" omitNorms="true" />
+		<dynamicField name="*__location" type="latLon" indexed="true" stored="true" omitNorms="true" />
+		<dynamicField name="*__long" type="long" indexed="true" stored="true" omitNorms="true" />
+
+		<dynamicField name="*__fname_an" type="firstname_analysed" indexed="true" stored="false" omitNorms="false" />
+		<dynamicField name="*__lname_an" type="lastname_analysed" indexed="true" stored="false" omitNorms="false" />
+		<dynamicField name="*__fname" type="name_string" indexed="true" stored="true" omitNorms="false" />
+		<dynamicField name="*__lname" type="name_string" indexed="true" stored="true" omitNorms="false" />
+		<dynamicField name="*__fname_syn" type="firstname_synalysed" indexed="true" stored="false" omitNorms="false" />
+		<dynamicField name="*__lname_syn" type="lastname_synalysed" indexed="true" stored="false" omitNorms="false" />
+		<dynamicField name="*__fname_an_rs" type="firstname_analysed_rs" indexed="true" stored="false" omitNorms="true" />
+		<dynamicField name="*__lname_an_rs" type="lastname_analysed_rs" indexed="true" stored="false" omitNorms="true" />
+		<dynamicField name="*__fname_an_initial" type="firstname_analysed_initial" indexed="true" stored="false" omitNorms="true" />
+		
+		<copyField source="*__fname_an" dest="*__fname_syn" />
+		<copyField source="*__fname_an" dest="*__fname" />
+		<copyField source="*__fname_an" dest="*__fname_an_rs" />
+		<copyField source="*__fname_an" dest="*__fname_an_initial" />
+		
+		<copyField source="*__lname_an" dest="*__lname_syn" />
+		<copyField source="*__lname_an" dest="*__lname" />
+		<copyField source="*__lname_an" dest="*__lname_an_rs" />
+
+	</fields>
+	<similarity class="brightsolid.solr.plugins.BrightSolidSimilarity" />
+	<uniqueKey>Id</uniqueKey>
+	<defaultSearchField>Id</defaultSearchField>
+	<solrQueryParser defaultOperator="OR"/>
+</schema>
