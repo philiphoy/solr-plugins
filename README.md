@@ -2,7 +2,7 @@
 
 ## Features
 * Due to distributed search requirements the plugin disables idf.
-* Enables query time boosting on position of term in text and a name search algorithm.
+* The plugin enables query time boosting on the position of a term in text and implements a name search query parser.
 
 
 ## Installation
@@ -46,8 +46,8 @@ In query url include a name query, for example here it uses the nested query syn
 * **gendervalue** will add required gender term query to the fuzzy, initial, null and phontic subseraches
 * **genderfield** (Gender__facet_text) will add required gender term query to the fuzzy, initial, null and phontic subseraches
 
-In essence the parser works as follows, for each clause in the query it will create a DisjunctionMaxQuery containing a few subqueries with varying boosts,
-there is also an aditional boost for when the position of the term in the field matches the clause in the query. Each disjunction is then added to a boolean query. 
+In essence the parser works as follows, for each clause in the query it will create a DisjunctionMaxQuery containing a number of subqueries, each with varying boosts,
+there is also an aditional boost for where the position of the term in the field matches the clause in the query. Each disjunction is then added to a boolean must occur query. 
 
 For example the query:
 
@@ -56,12 +56,12 @@ For example the query:
 would parse to this form of query:
 
 
- +( 	spanTargPos(name__fname_an:my,0) |<br/>  _//straight search target position 0_ <br/>
-	spanTargPos(name__fname_syn:my,0)^0.8 | <br/>_//synonym search target position 0 boost 0.8_ <br/>
-	spanTargPos(name__fname_an:m,0)^0.2 |<br/> _//initial search target position 0 boost 0.2_ <br/>
-	spanTargPos(name__fname_an_rs:my,0)^0.1 |<br/> _//phonetic search target position 0 boost 0.1_ <br/>
-	spanTargPos(SpanMultiTermQueryWrapper(name__fname_an:my~2),0)^0.2<br/> _//fuzzy search target position 0 boost 0.2_  <br/>
-	spanTargPos(name__fname:-,0)^0.01)~0.01 | <br/> _//null search target position 0 boost 0.01_ <br/>
+ +( spanTargPos(name__fname_an:my,0) |<br/>  _//straight search, target position 0_ <br/>
+	spanTargPos(name__fname_syn:my,0)^0.8 | <br/>_//synonym search, target position 0, boost 0.8_ <br/>
+	spanTargPos(name__fname_an:m,0)^0.2 |<br/> _//initial search, target position 0, boost 0.2_ <br/>
+	spanTargPos(name__fname_an_rs:my,0)^0.1 |<br/> _//phonetic search, target position 0, boost 0.1_ <br/>
+	spanTargPos(SpanMultiTermQueryWrapper(name__fname_an:my~2),0)^0.2<br/> _//fuzzy search, target position 0, boost 0.2_  <br/>
+	spanTargPos(name__fname:-,0)^0.01)~0.01 | <br/> _//null search, target position 0, boost 0.01_ <br/>
  +( spanTargPos(name__fname_an:name,1) | <br/>
 	spanTargPos(name__fname_syn:name,1)^0.8 | <br/>
 	spanTargPos(name__fname_an:n,1)^0.2 | <br/>

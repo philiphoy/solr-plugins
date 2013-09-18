@@ -72,6 +72,28 @@ public class TestNameSearch extends SolrTestCaseJ4{
   }
 
   public void testNameSearch() throws Exception {
+    
+    assertJQ(req("_query_:\"{!nameQuery f=name__fname }\""),           
+            "/response/numFound==0"
+            );
+
+    assertJQ(req("_query_:\"{!nameQuery f=name__fname }o t\""),
+            "/response/docs/[0]/Id=='5'",
+            "/response/docs/[1]/Id=='4'",
+            "/response/docs/[2]/Id=='2'",
+            "/response/docs/[3]/Id=='3'",
+            "/response/docs/[4]/Id=='8'",
+            "/response/numFound==5"
+            );
+
+    assertJQ(req("_query_:\"{!nameQuery f=name__fname }o two\""),
+            "/response/docs/[0]/Id=='2'",
+            "/response/docs/[1]/Id=='5'",
+            "/response/docs/[2]/Id=='3'",
+            "/response/docs/[3]/Id=='4'",
+            "/response/docs/[4]/Id=='8'",
+            "/response/numFound==5"
+            );
 
     assertJQ(req("_query_:\"{!nameQuery f=name__fname }two one\""),
             "/response/docs/[0]/Id=='3'",

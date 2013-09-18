@@ -43,7 +43,6 @@ public class NameQueryParser extends LuceneQParser {
   private String gendervalue;
   private String genderfield;
 
-
   public NameQueryParser(String arg0, SolrParams arg1, SolrParams arg2, SolrQueryRequest arg3) {
     super(arg0, arg1, arg2, arg3);
 
@@ -116,13 +115,12 @@ public class NameQueryParser extends LuceneQParser {
     if (val.contains("*") || val.contains("?")) {
       SpanQuery sq;
       if (val.endsWith("*") && val.length() == 2) {
-        sq = new SpanTermQuery(new Term(field + "_an_initial", val.substring(0, 1)));
+        return CreateDisjunction(val.substring(0, 1), position);
       } else {
         WildcardQuery wq = new WildcardQuery(new Term(field + "_an", val));
         sq = new SpanMultiTermQueryWrapper<WildcardQuery>(wq);
+        return new SpanTargetPositionQuery(sq, position);
       }
-      return new SpanTargetPositionQuery(sq, position);
-
     } else {
       return CreateDisjunction(val, position);
     }
@@ -135,44 +133,10 @@ public class NameQueryParser extends LuceneQParser {
     // Add analysed name
     SpanQuery aq = new SpanTermQuery(new Term(field + "_an", val));
     Query saq = new SpanTargetPositionQuery(aq, position);
+    if (val.length() == 1) {
+      // saq.setBoost(0.7f);
+    }
     dq.add(saq);
-
-    if(usesyn){
-      // Add synonyms
-      SpanQuery sq = new SpanTermQuery(new Term(field + "_syn", val));
-      Query ssq = new SpanTargetPositionQuery(sq, position);
-      ssq.setBoost(synboost);
-      dq.add(ssq);
-    }
- 
-    if (useinitial) {
-      // Add initial
-      String firstChar = val.substring(0, 1);
-      SpanQuery iq = new SpanTermQuery(new Term(field + "_an", firstChar));
-      Query siq = new SpanTargetPositionQuery(iq, position);
-      siq = addGenderQuery(siq);
-      siq.setBoost(initialboost);
-      dq.add(siq);
-    }
-
-    if (usephonetic) {
-      // Add phonetics
-      SpanQuery pq = new SpanTermQuery(new Term(field + "_an_rs", val));
-      Query spq = new SpanTargetPositionQuery(pq, position);
-      spq = addGenderQuery(spq);
-      spq.setBoost(phoneticboost);
-      dq.add(spq);
-    }
-
-    if (usefuzzy) {
-      // Add fuzzy
-      FuzzyQuery fq = new FuzzyQuery(new Term(field + "_an", val));
-      SpanQuery fqw = new SpanMultiTermQueryWrapper<FuzzyQuery>(fq);
-      Query sfq = new SpanTargetPositionQuery(fqw, position);
-      sfq = addGenderQuery(sfq);
-      sfq.setBoost(fuzzyboost);
-      dq.add(sfq);
-    }
 
     if (usenull) {
       // Null names
@@ -181,6 +145,54 @@ public class NameQueryParser extends LuceneQParser {
       snq = addGenderQuery(snq);
       snq.setBoost(nullboost);
       dq.add(snq);
+    }
+
+    if (val.length() == 1) {
+      if (useinitial) {
+        // Add initial query ie. x* type query.
+        SpanQuery iq = new SpanTermQuery(new Term(field + "_an_initial", val));
+        Query siq = new SpanTargetPositionQuery(iq, position);
+        siq = addGenderQuery(siq);
+        siq.setBoost(initialboost);
+        dq.add(siq);
+      }
+    } else {
+      if (usesyn) {
+        // Add synonyms
+        SpanQuery sq = new SpanTermQuery(new Term(field + "_syn", val));
+        Query ssq = new SpanTargetPositionQuery(sq, position);
+        ssq.setBoost(synboost);
+        dq.add(ssq);
+      }
+
+      if (useinitial) {
+        // Add initial
+        String firstChar = val.substring(0, 1);
+        SpanQuery iq = new SpanTermQuery(new Term(field + "_an", firstChar));
+        Query siq = new SpanTargetPositionQuery(iq, position);
+        siq = addGenderQuery(siq);
+        siq.setBoost(initialboost);
+        dq.add(siq);
+      }
+
+      if (usephonetic) {
+        // Add phonetics
+        SpanQuery pq = new SpanTermQuery(new Term(field + "_an_rs", val));
+        Query spq = new SpanTargetPositionQuery(pq, position);
+        spq = addGenderQuery(spq);
+        spq.setBoost(phoneticboost);
+        dq.add(spq);
+      }
+
+      if (usefuzzy) {
+        // Add fuzzy
+        FuzzyQuery fq = new FuzzyQuery(new Term(field + "_an", val));
+        SpanQuery fqw = new SpanMultiTermQueryWrapper<FuzzyQuery>(fq);
+        Query sfq = new SpanTargetPositionQuery(fqw, position);
+        sfq = addGenderQuery(sfq);
+        sfq.setBoost(fuzzyboost);
+        dq.add(sfq);
+      }
     }
 
     return dq;
