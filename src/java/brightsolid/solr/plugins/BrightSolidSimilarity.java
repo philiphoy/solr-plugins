@@ -4,10 +4,16 @@ import org.apache.lucene.search.similarities.DefaultSimilarity;
 import org.apache.lucene.util.BytesRef;
 
 public class BrightSolidSimilarity extends DefaultSimilarity {
+  
 	@Override
-	public float idf(long docFreq, long numDocs) {
-		return 1.0f;
-	}
+	public float queryNorm(float sumOfSquaredWeights) {
+	    return 1.0f;
+	  }
+	
+	@Override
+    public float idf(long docFreq, long numDocs) {
+        return 1.0f;
+    }
 
 	@Override
 	public float scorePayload(int doc, int start, int end, BytesRef payload){		

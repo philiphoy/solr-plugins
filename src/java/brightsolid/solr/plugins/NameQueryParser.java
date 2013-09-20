@@ -30,8 +30,8 @@ public class NameQueryParser extends LuceneQParser {
   private String field;
   private String value;
   private float synboost = 0.8f;
-  private float initialboost = 0.2f;
-  private float phoneticboost = 0.1f;
+  private float initialboost = 0.3f;
+  private float phoneticboost = 0.2f;
   private float nullboost = 0.01f;
   private float fuzzyboost = 0.2f;
 
@@ -133,9 +133,6 @@ public class NameQueryParser extends LuceneQParser {
     // Add analysed name
     SpanQuery aq = new SpanTermQuery(new Term(field + "_an", val));
     Query saq = new SpanTargetPositionQuery(aq, position);
-    if (val.length() == 1) {
-      // saq.setBoost(0.7f);
-    }
     dq.add(saq);
 
     if (usenull) {
@@ -177,7 +174,15 @@ public class NameQueryParser extends LuceneQParser {
 
       if (usephonetic) {
         // Add phonetics
-        SpanQuery pq = new SpanTermQuery(new Term(field + "_an_rs", val));
+        
+        String pval = null;
+        try {
+          pval = translatePhonetic(val);
+        } catch (SyntaxError e) {
+          e.printStackTrace();
+        }
+        SpanQuery pq = new SpanTermQuery(new Term(field + "_an_rs", pval));
+        
         Query spq = new SpanTargetPositionQuery(pq, position);
         spq = addGenderQuery(spq);
         spq.setBoost(phoneticboost);
@@ -186,7 +191,11 @@ public class NameQueryParser extends LuceneQParser {
 
       if (usefuzzy) {
         // Add fuzzy
-        FuzzyQuery fq = new FuzzyQuery(new Term(field + "_an", val));
+        int edits = 1;
+        if(val.length()>8){
+          edits=2;
+        }
+        FuzzyQuery fq = new FuzzyQuery(new Term(field + "_an", val),edits,2);
         SpanQuery fqw = new SpanMultiTermQueryWrapper<FuzzyQuery>(fq);
         Query sfq = new SpanTargetPositionQuery(fqw, position);
         sfq = addGenderQuery(sfq);
@@ -198,12 +207,32 @@ public class NameQueryParser extends LuceneQParser {
     return dq;
   }
 
+  private String translatePhonetic(String val ) throws SyntaxError {
+    
+    Analyzer analyzer = getReq().getSchema().getFieldType(field + "_an_rs").getQueryAnalyzer();
+    TokenStream stream;
+    try {
+      stream = analyzer.tokenStream(null, new StringReader(val));
+      CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
+      stream.reset();
+
+      if (stream.incrementToken()) {
+        return cattr.toString();
+      }
+      stream.end();
+      stream.close();
+    } catch (IOException e) {
+      throw new SyntaxError("Query term could not be split", e);
+    }
+    return val;
+  }
+  
   private Query addGenderQuery(Query spq) {
 
     if (gendervalue != null && !gendervalue.isEmpty()) {
       BooleanQuery bq = new BooleanQuery();
       bq.add(spq, Occur.MUST);
-      bq.add(new TermQuery(new Term(genderfield, gendervalue)), Occur.MUST);
+      bq.add(new TermQuery(new Term(genderfield, gendervalue)), Occur.MUST_NOT);
       return bq;
     }
     return spq;

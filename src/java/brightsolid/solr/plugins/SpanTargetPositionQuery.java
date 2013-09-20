@@ -145,8 +145,12 @@ public class SpanTargetPositionQuery extends SpanQuery implements Cloneable {
     @Override
     public Scorer scorer(AtomicReaderContext context, boolean scoreDocsInOrder, boolean topScorer, Bits acceptDocs)
             throws IOException {
-      return new TargetPositionScorer(query.getSpans(context, acceptDocs, termContexts), this, similarity.simScorer(
+      if (stats == null) {
+        return null;
+      } else {
+        return new TargetPositionScorer(query.getSpans(context, acceptDocs, termContexts), this, similarity.simScorer(
               stats, context));
+      }
     }
 
     protected class TargetPositionScorer extends SpanScorer {
