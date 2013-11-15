@@ -26,16 +26,17 @@ import org.apache.solr.search.SyntaxError;
 
 public class NameQueryParser extends LuceneQParser {
 
-  private float tie = 0.01f;
+  private float tie = 0.0f;
   private String field;
   private String value;
+  private float exactboost = 1.01f;
   private float synboost = 0.8f;
-  private float initialboost = 0.3f;
-  private float phoneticboost = 0.2f;
+  private float initialboost = 0.42f;
+  private float phoneticboost = 0.75f;
   private float nullboost = 0.01f;
   private float fuzzyboost = 0.2f;
-
-  private boolean usefuzzy = true;
+  private boolean useexact = false;
+  private boolean usefuzzy = false;
   private boolean usephonetic = true;
   private boolean usenull = true;
   private boolean useinitial = true;
@@ -48,6 +49,9 @@ public class NameQueryParser extends LuceneQParser {
 
     if (getParam("tie") != null) {
       tie = Float.parseFloat(getParam("tie"));
+    }
+    if (getParam("exactboost") != null) {
+      exactboost = Float.parseFloat(getParam("exactboost"));
     }
     if (getParam("synboost") != null) {
       synboost = Float.parseFloat(getParam("synboost"));
@@ -63,6 +67,9 @@ public class NameQueryParser extends LuceneQParser {
     }
     if (getParam("fuzzyboost") != null) {
       fuzzyboost = Float.parseFloat(getParam("fuzzyboost"));
+    }
+    if (getParam("useexact") != null) {
+      useexact = Boolean.parseBoolean(getParam("useexact"));
     }
     if (getParam("usesyn") != null) {
       usesyn = Boolean.parseBoolean(getParam("usesyn"));
@@ -102,7 +109,7 @@ public class NameQueryParser extends LuceneQParser {
         bq.add(new BooleanClause(q, Occur.MUST));
         position++;
       }
-      stream.end();
+      stream.end();;
       stream.close();
     } catch (IOException e) {
       throw new SyntaxError("Query term could not be split", e);
@@ -111,29 +118,30 @@ public class NameQueryParser extends LuceneQParser {
     return bq;
   }
 
-  private Query CreateDisjunctionOrWildcard(String val, int position) {
+  private Query CreateDisjunctionOrWildcard(String val, int position) throws SyntaxError {
     if (val.contains("*") || val.contains("?")) {
-      SpanQuery sq;
-      if (val.endsWith("*") && val.length() == 2) {
-        return CreateDisjunction(val.substring(0, 1), position);
-      } else {
-        WildcardQuery wq = new WildcardQuery(new Term(field + "_an", val));
-        sq = new SpanMultiTermQueryWrapper<WildcardQuery>(wq);
-        return new SpanTargetPositionQuery(sq, position);
-      }
+      WildcardQuery wq = new WildcardQuery(new Term(field + "_an", val));
+      SpanQuery sq = new SpanMultiTermQueryWrapper<WildcardQuery>(wq);
+      return new SpanTargetPositionQuery(sq, position);
     } else {
       return CreateDisjunction(val, position);
     }
   }
 
-  private Query CreateDisjunction(String val, int position) {
+  private Query CreateDisjunction (String val, int position) throws SyntaxError {
 
     DisjunctionMaxQuery dq = new DisjunctionMaxQuery(tie);
 
     // Add analysed name
     SpanQuery aq = new SpanTermQuery(new Term(field + "_an", val));
     Query saq = new SpanTargetPositionQuery(aq, position);
+    
     dq.add(saq);
+
+    if(useexact){
+      Query eq = addExactMatch(value,field);
+      dq.add(eq);
+    }
 
     if (usenull) {
       // Null names
@@ -156,8 +164,8 @@ public class NameQueryParser extends LuceneQParser {
     } else {
       if (usesyn) {
         // Add synonyms
-        SpanQuery sq = new SpanTermQuery(new Term(field + "_syn", val));
-        Query ssq = new SpanTargetPositionQuery(sq, position);
+        SpanQuery sssq = new SpanTermQuery(new Term(field + "_syn", val));
+        Query ssq = new SpanTargetPositionQuery(sssq, position);
         ssq.setBoost(synboost);
         dq.add(ssq);
       }
@@ -195,10 +203,8 @@ public class NameQueryParser extends LuceneQParser {
         if(val.length()>8){
           edits=2;
         }
-        FuzzyQuery fq = new FuzzyQuery(new Term(field + "_an", val),edits,2);
-        SpanQuery fqw = new SpanMultiTermQueryWrapper<FuzzyQuery>(fq);
-        Query sfq = new SpanTargetPositionQuery(fqw, position);
-        sfq = addGenderQuery(sfq);
+        FuzzyQuery fq = new FuzzyQuery(new Term(field + "_an", val),edits,2);       
+        Query sfq = addGenderQuery(fq);
         sfq.setBoost(fuzzyboost);
         dq.add(sfq);
       }
@@ -225,6 +231,28 @@ public class NameQueryParser extends LuceneQParser {
       throw new SyntaxError("Query term could not be split", e);
     }
     return val;
+  }
+
+  private Query addExactMatch (String term, String field) throws SyntaxError{
+    Analyzer analyzer = getReq().getSchema().getFieldType(field).getQueryAnalyzer();
+    TokenStream stream;
+    try {
+      stream = analyzer.tokenStream(null, new StringReader(term));
+      CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
+      stream.reset();
+
+      if (stream.incrementToken()) {
+        String val = cattr.toString();
+        Query  q = new TermQuery(new Term(field, val));
+        q.setBoost(exactboost);
+        return q;
+      }
+      stream.end();
+      stream.close();
+      return null;
+    } catch (IOException e) {
+      throw new SyntaxError("Query term could not be analysed", e);
+    }
   }
   
   private Query addGenderQuery(Query spq) {

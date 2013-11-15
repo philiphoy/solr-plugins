@@ -31,15 +31,18 @@ In query url include a name query, for example here it uses the nested query syn
 ```	
 #### Available local params that you can pass
 * **f**  root field name to use for the search 
-* **tie** (0.01) the tiebreaker used by the DisjunctionMaxQuery of each clause
+* **tie** (0.00) the tiebreaker used by the DisjunctionMaxQuery of each clause
 
+* **exactboost** (1.01) the boost to apply to the analysed field subsearch
+* **useexact** (false) add synonym search
+* **anboost** (0.9) the boost to apply to the analysed field subsearch
 * **usesyn** (true) add synonym search
 * **synboost** (0.8) the boost to apply to the synonym subsearch
 * **useinitial** (true) add inital search
-* **initialboost** (0.3) the boost to apply to the search for initials of the search term
+* **initialboost** (0.42) the boost to apply to the search for initials of the search term
 * **usephonetic** (true) add phonetic subsearch
-* **phoneticboost** (0.2) boost to apply to the phonetic subsearch
-* **usefuzzy** (true) add fuzzy subsearch
+* **phoneticboost** (0.75) boost to apply to the phonetic subsearch
+* **usefuzzy** (false) add fuzzy subsearch
 * **fuzzyboost** (0.2) the boost to apply to the fuzzy subsearch
 * **usenull** (true) add null search (actually search for -)
 * **nullboost** (0.01) the boost to apply to null boost (actually search for -)
@@ -56,7 +59,8 @@ For example the query:
 would parse to this form of query:
 
 
- +( spanTargPos(name__fname_an:my,0) |<br/>  _//straight search, target position 0_ <br/>
+ +( spanTargPos(name__fname:my) |<br/>  _//straight search, target position 0_ <br/>
+    spanTargPos(name__fname_an:my,0.9) |<br/>  _//straight analysed search, target position 0_ <br/>
 	spanTargPos(name__fname_syn:my,0)^0.8 | <br/>_//synonym search, target position 0, boost 0.8_ <br/>
 	spanTargPos(name__fname_an:m,0)^0.3 |<br/> _//initial search, target position 0, boost 0.2_ <br/>
 	spanTargPos(name__fname_an_rs:my,0)^0.2 |<br/> _//phonetic search, target position 0, boost 0.1_ <br/>

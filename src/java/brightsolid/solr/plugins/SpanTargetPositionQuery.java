@@ -159,6 +159,7 @@ public class SpanTargetPositionQuery extends SpanQuery implements Cloneable {
         super(spans, weight, docScorer);
       }
 
+     
       @Override
       protected boolean setFreqCurrentDoc() throws IOException {
         if (!more) {

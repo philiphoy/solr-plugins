@@ -83,9 +83,9 @@ public class TestNameSearch extends SolrTestCaseJ4{
             "/response/numFound==2"
             );
 
-    assertJQ(req("_query_:{!nameQuery f=name__fname }t*"),
-            "/response/docs/[0]/Id=='4'",
-            "/response/numFound==7"
+    assertJQ(req("_query_:{!nameQuery usefuzzy=true f=name__fname }t*"),
+            "/response/docs/[0]/Id=='6'",
+            "/response/numFound==6"
             );
   }
 
