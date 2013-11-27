@@ -1,13 +1,20 @@
 <?xml version="1.0"?>
+
 <ivy-module version="2.0">
     <info organisation="com.example" module="common-libs"/>
+   
     <configurations>
-        <conf name="compile" transitive="true" visibility="public" />       
+       <conf name="compile" transitive="true" visibility="public" />            
     </configurations>
-    <dependencies>       
-        <dependency org="org.apache.solr" name="solr" rev="4.4.0"
-                    conf="compile"/>
-        <dependency org="junit" name="junit" rev="4.3"
-                    conf="compile"/>
+    
+    <dependencies>    
+      <dependency org="local"  name="solr-core" rev="4.2.1" />
+      <dependency org="local"  name="solr-solrj" rev="4.2.1" /> 
+      <dependency org="org.apache.lucene" name="lucene-test-framework" rev="4.2.1" conf="compile"/>                  
+      <dependency org="org.apache.solr" name="solr" rev="4.2.1" conf="compile" /> 
+      <dependency org="org.apache.solr" name="solr-dataimporthandler" rev="4.2.1"/>
+      <dependency org="org.apache.lucene" name="lucene-core" rev="4.2.1"  conf="compile"/>
+
     </dependencies>
+    
 </ivy-module>

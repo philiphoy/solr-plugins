@@ -20,11 +20,11 @@ import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.request.SolrQueryRequest;
-import org.apache.solr.search.LuceneQParser;
+import org.apache.solr.search.QParser;
 import org.apache.solr.search.QueryParsing;
 import org.apache.solr.search.SyntaxError;
 
-public class NameQueryParser extends LuceneQParser {
+public class NameQueryParser extends QParser {
 
   private float tie = 0.0f;
   private String field;
