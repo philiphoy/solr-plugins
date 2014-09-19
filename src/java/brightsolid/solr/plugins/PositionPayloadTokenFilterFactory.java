@@ -10,7 +10,7 @@ import brightsolid.solr.plugins.PositionPayloadTokenFilter;
 public class PositionPayloadTokenFilterFactory extends TokenFilterFactory{
   
   public PositionPayloadTokenFilterFactory(Map<String, String> args) {
-    super();    
+    super(args);    
   }
 
   public PositionPayloadTokenFilter create(TokenStream input) {

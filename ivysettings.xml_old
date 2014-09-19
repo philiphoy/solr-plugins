@@ -1,4 +1,4 @@
-<ivysettings>
+<!--ivysettings>
     <settings defaultResolver="central"/>
     <resolvers>
         <ibiblio name="central" m2compatible="true"/>
@@ -9,4 +9,4 @@
     <modules>
         <module organisation="local" resolver="local"/>
     </modules>
-</ivysettings>
+</ivysettings-->

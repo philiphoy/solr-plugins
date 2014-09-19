@@ -148,14 +148,14 @@ public class SpanTargetPositionQuery extends SpanQuery implements Cloneable {
       if (stats == null) {
         return null;
       } else {
-        return new TargetPositionScorer(query.getSpans(context, acceptDocs, termContexts), this, similarity.sloppySimScorer( 
+        return new TargetPositionScorer(query.getSpans(context, acceptDocs, termContexts), this, similarity.simScorer( 
               stats, context));
       }
     }
 
     protected class TargetPositionScorer extends SpanScorer {
 
-      public TargetPositionScorer(Spans spans, Weight weight,  Similarity.SloppySimScorer docScorer) throws IOException {
+      public TargetPositionScorer(Spans spans, Weight weight,  Similarity.SimScorer docScorer) throws IOException {
         super(spans, weight, docScorer);
       }
 

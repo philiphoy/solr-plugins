@@ -59,7 +59,7 @@ public class TestTargetPositionQuerySynonyms extends LuceneTestCase {
             "three, free, tres";
 
     SolrSynonymParser parser = new SolrSynonymParser(true, true, new MockAnalyzer(random()));
-    parser.add(new StringReader(testFile));
+    parser.parse(new StringReader(testFile));
 
     final SynonymMap map = parser.build();
     Analyzer analyzer = new Analyzer() {

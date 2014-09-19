@@ -15,7 +15,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.WildcardQuery;
-import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.solr.common.params.SolrParams;
@@ -35,15 +34,17 @@ public class NameQueryParser extends QParser {
   private float phoneticboost = 0.75f;
   private float nullboost = 0.01f;
   private float fuzzyboost = 0.2f;
+  private float wildboost = 0.1f;
   private boolean useexact = false;
   private boolean usefuzzy = false;
   private boolean usephonetic = true;
   private boolean usenull = true;
   private boolean useinitial = true;
   private boolean usesyn = true;
+  private boolean isSurname = true;
   private String gendervalue;
   private String genderfield;
-
+  private String postfix ="";
   public NameQueryParser(String arg0, SolrParams arg1, SolrParams arg2, SolrQueryRequest arg3) {
     super(arg0, arg1, arg2, arg3);
 
@@ -68,6 +69,9 @@ public class NameQueryParser extends QParser {
     if (getParam("fuzzyboost") != null) {
       fuzzyboost = Float.parseFloat(getParam("fuzzyboost"));
     }
+    if (getParam("wildboost") != null) {
+      wildboost = Float.parseFloat(getParam("wildboost"));
+    }
     if (getParam("useexact") != null) {
       useexact = Boolean.parseBoolean(getParam("useexact"));
     }
@@ -86,17 +90,24 @@ public class NameQueryParser extends QParser {
     if (getParam("useinitial") != null) {
       useinitial = Boolean.parseBoolean(getParam("useinitial"));
     }
+    if (getParam("isSurname") != null) {
+    	isSurname = Boolean.parseBoolean(getParam("isSurname"));
+     }
     gendervalue = localParams.get("gendervalue");
     genderfield = localParams.get("genderfield", "Gender__facet_text");
-    field = localParams.get(QueryParsing.F);
+    field = localParams.get(QueryParsing.F);    
     value = localParams.get(QueryParsing.V).trim();
   }
 
   @Override
   public Query parse() throws SyntaxError {
 
+	if(field.endsWith("_mv")){
+    	field = field.substring(0, field.length() - 3);
+    	postfix = "_mv";
+    }
     BooleanQuery bq = new BooleanQuery();
-    Analyzer analyzer = getReq().getSchema().getFieldType(field + "_an").getQueryAnalyzer();
+    Analyzer analyzer = getReq().getSchema().getFieldType(field + "_an" + postfix).getQueryAnalyzer();
 
     TokenStream stream;
     try {
@@ -104,12 +115,24 @@ public class NameQueryParser extends QParser {
       CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
       stream.reset();
       int position = 0;
+      String concatenated = "";
       while (stream.incrementToken()) {
-        Query q = CreateDisjunctionOrWildcard(cattr.toString(), position);
+    	String tokenised =  cattr.toString();
+    	concatenated += tokenised;
+        Query q = CreateDisjunctionOrWildcard(tokenised, position);
         bq.add(new BooleanClause(q, Occur.MUST));
         position++;
       }
-      stream.end();;
+      //only add a SHOUlD term when more than one term is tokenised.
+      if(position>1){
+    	  //position seems to greater than 0 when looking at solr's analysis web ui.
+    	  Query q = CreateDisjunctionOrWildcard(concatenated, position - 1);  
+    	  BooleanQuery concatBq = new BooleanQuery();
+    	  concatBq.add(new BooleanClause(q, Occur.SHOULD));
+    	  concatBq.add(bq, Occur.SHOULD);    	 
+    	  bq = concatBq;
+      }
+      stream.end();
       stream.close();
     } catch (IOException e) {
       throw new SyntaxError("Query term could not be split", e);
@@ -120,9 +143,20 @@ public class NameQueryParser extends QParser {
 
   private Query CreateDisjunctionOrWildcard(String val, int position) throws SyntaxError {
     if (val.contains("*") || val.contains("?")) {
-      WildcardQuery wq = new WildcardQuery(new Term(field + "_an", val));
-      SpanQuery sq = new SpanMultiTermQueryWrapper<WildcardQuery>(wq);
-      return new SpanTargetPositionQuery(sq, position);
+      if(!isSurname){
+    	  if(val.length()==2 && !(val.startsWith("*")||val.startsWith("?"))){
+	        String firstChar = val.substring(0, 1);
+	        SpanQuery iq = new SpanTermQuery(new Term(field + "_an_initial" + postfix, firstChar));
+	        Query siq = new SpanTargetPositionQuery(iq, position);
+	        siq = addGenderQuery(siq);
+	        siq.setBoost(wildboost);
+	        return iq;
+	      }
+      }     
+      Query wq = new WildcardQuery(new Term(field + "_an" + postfix, val));
+      wq = addGenderQuery(wq);
+      wq.setBoost(wildboost);
+      return wq;
     } else {
       return CreateDisjunction(val, position);
     }
@@ -133,7 +167,7 @@ public class NameQueryParser extends QParser {
     DisjunctionMaxQuery dq = new DisjunctionMaxQuery(tie);
 
     // Add analysed name
-    SpanQuery aq = new SpanTermQuery(new Term(field + "_an", val));
+    SpanQuery aq = new SpanTermQuery(new Term(field + "_an" + postfix, val));
     Query saq = new SpanTargetPositionQuery(aq, position);
     
     dq.add(saq);
@@ -155,7 +189,7 @@ public class NameQueryParser extends QParser {
     if (val.length() == 1) {
       if (useinitial) {
         // Add initial query ie. x* type query.
-        SpanQuery iq = new SpanTermQuery(new Term(field + "_an_initial", val));
+        SpanQuery iq = new SpanTermQuery(new Term(field + "_an_initial" + postfix, val));
         Query siq = new SpanTargetPositionQuery(iq, position);
         siq = addGenderQuery(siq);
         siq.setBoost(initialboost);
@@ -164,7 +198,7 @@ public class NameQueryParser extends QParser {
     } else {
       if (usesyn) {
         // Add synonyms
-        SpanQuery sssq = new SpanTermQuery(new Term(field + "_syn", val));
+        SpanQuery sssq = new SpanTermQuery(new Term(field + "_syn" + postfix, val));
         Query ssq = new SpanTargetPositionQuery(sssq, position);
         ssq.setBoost(synboost);
         dq.add(ssq);
@@ -173,7 +207,7 @@ public class NameQueryParser extends QParser {
       if (useinitial) {
         // Add initial
         String firstChar = val.substring(0, 1);
-        SpanQuery iq = new SpanTermQuery(new Term(field + "_an", firstChar));
+        SpanQuery iq = new SpanTermQuery(new Term(field + "_an" + postfix, firstChar));
         Query siq = new SpanTargetPositionQuery(iq, position);
         siq = addGenderQuery(siq);
         siq.setBoost(initialboost);
@@ -189,7 +223,7 @@ public class NameQueryParser extends QParser {
         } catch (SyntaxError e) {
           e.printStackTrace();
         }
-        SpanQuery pq = new SpanTermQuery(new Term(field + "_an_rs", pval));
+        SpanQuery pq = new SpanTermQuery(new Term(field + "_an_rs" + postfix, pval));
         
         Query spq = new SpanTargetPositionQuery(pq, position);
         spq = addGenderQuery(spq);
@@ -203,7 +237,7 @@ public class NameQueryParser extends QParser {
         if(val.length()>8){
           edits=2;
         }
-        FuzzyQuery fq = new FuzzyQuery(new Term(field + "_an", val),edits,2);       
+        FuzzyQuery fq = new FuzzyQuery(new Term(field + "_an" + postfix, val),edits,2);       
         Query sfq = addGenderQuery(fq);
         sfq.setBoost(fuzzyboost);
         dq.add(sfq);
@@ -215,18 +249,17 @@ public class NameQueryParser extends QParser {
 
   private String translatePhonetic(String val ) throws SyntaxError {
     
-    Analyzer analyzer = getReq().getSchema().getFieldType(field + "_an_rs").getQueryAnalyzer();
+    Analyzer analyzer = getReq().getSchema().getFieldType(field + "_an_rs" + postfix).getQueryAnalyzer();
     TokenStream stream;
     try {
       stream = analyzer.tokenStream(null, new StringReader(val));
-      CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
+      CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class); 
       stream.reset();
-
       if (stream.incrementToken()) {
-        return cattr.toString();
+        val = cattr.toString();
       }
       stream.end();
-      stream.close();
+      stream.close();      
     } catch (IOException e) {
       throw new SyntaxError("Query term could not be split", e);
     }
@@ -240,16 +273,15 @@ public class NameQueryParser extends QParser {
       stream = analyzer.tokenStream(null, new StringReader(term));
       CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
       stream.reset();
-
+      Query q = null;
       if (stream.incrementToken()) {
         String val = cattr.toString();
-        Query  q = new TermQuery(new Term(field, val));
-        q.setBoost(exactboost);
-        return q;
+        q = new TermQuery(new Term(field, val));
+        q.setBoost(exactboost);        
       }
       stream.end();
       stream.close();
-      return null;
+      return q;
     } catch (IOException e) {
       throw new SyntaxError("Query term could not be analysed", e);
     }

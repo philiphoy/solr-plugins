@@ -1,14 +1,28 @@
 package brightsolid.solr.plugins;
 
+import java.io.IOException;
+
+import org.apache.lucene.index.AtomicReaderContext;
+import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.search.similarities.DefaultSimilarity;
+import org.apache.lucene.search.similarities.Similarity.SimScorer;
+import org.apache.lucene.search.similarities.Similarity.SimWeight;
 import org.apache.lucene.util.BytesRef;
 
-public class BrightSolidSimilarity extends DefaultSimilarity {
+
+public class BrightSolidSimilarity extends BsDefaultSimilarity {
   
+	
+	@Override
+	  public SimScorer simScorer(SimWeight stats, AtomicReaderContext context) throws IOException {
+	    IDFStats idfstats = (IDFStats) stats;
+	    return new TFIDFSimScorer(idfstats, null);
+	  }
+	 
 	@Override
 	public float queryNorm(float sumOfSquaredWeights) {
 	    return 1.0f;
-	  }
+	}
 	
 	@Override
     public float idf(long docFreq, long numDocs) {

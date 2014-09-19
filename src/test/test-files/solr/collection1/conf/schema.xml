@@ -126,8 +126,10 @@
 			</analyzer>
 			<analyzer type="query">
 				<tokenizer class="solr.WhitespaceTokenizerFactory"/>
+				<filter class="solr.ASCIIFoldingFilterFactory"/>
 				<filter class="solr.LowerCaseFilterFactory" />
 				<filter class="solr.TrimFilterFactory" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" stemEnglishPossessive="0" />
 			</analyzer>
 		</fieldType>
 		<fieldType name="lastname_analysed_rs" class="solr.TextField" positionIncrementGap="100">
@@ -200,6 +202,37 @@
 		<copyField source="*__lname_an" dest="*__lname" />
 		<copyField source="*__lname_an" dest="*__lname_an_rs" />
 
+        <dynamicField name="*__string_mv" multiValued="true" type="string" indexed="true" stored="true" omitNorms="true" />
+		<dynamicField name="*__text_mv" multiValued="true" type="analysed" indexed="true" stored="true" omitNorms="true" />	
+		<dynamicField name="*__int_mv" multiValued="true" type="int" indexed="true" stored="true" omitNorms="true"  />
+		<dynamicField name="*__double_mv" multiValued="true" type="double" indexed="true" stored="true" omitNorms="true"  />
+		<dynamicField name="*__year_mv" multiValued="true" type="tint" indexed="true" stored="true" omitNorms="true" />
+		<dynamicField name="*__date_mv" multiValued="true" type="date" indexed="true" stored="true" omitNorms="true" />
+		<dynamicField name="*__float_mv" multiValued="true" type="float" indexed="true" stored="true" omitNorms="true" />
+		<dynamicField name="*__fname_mv" multiValued="true" type="name_string" indexed="true" stored="true" omitNorms="true" />
+		<dynamicField name="*__lname_mv" multiValued="true" type="name_string" indexed="true" stored="true" omitNorms="false" />	
+		<dynamicField name="*__long_mv" multiValued="true" type="long" indexed="true" stored="true" omitNorms="true" />
+        <dynamicField name="*__facet_text_mv"  multiValued="true" type="text_facet" indexed="true" stored="false" omitNorms="true" />
+        <dynamicField name="*__facet_text_mv_ordered"  multiValued="true" type="text_facet" indexed="true" stored="false" omitNorms="true" />
+		
+		<dynamicField name="*__fname_syn_mv" multiValued="true" type="firstname_synalysed" indexed="true" stored="false" omitNorms="true" />
+		<dynamicField name="*__lname_syn_mv" multiValued="true" type="lastname_synalysed" indexed="true" stored="false" omitNorms="false" />
+
+		<dynamicField name="*__fname_an_mv" multiValued="true" type="firstname_analysed" indexed="true" stored="false" omitNorms="true" />
+		<dynamicField name="*__lname_an_mv" multiValued="true" type="lastname_analysed" indexed="true" stored="false" omitNorms="false" />
+		<dynamicField name="*__fname_an_rs_mv" multiValued="true" type="firstname_analysed_rs" indexed="true" stored="false" omitNorms="true" />
+		<dynamicField name="*__lname_an_rs_mv" multiValued="true" type="lastname_analysed_rs" indexed="true" stored="false" omitNorms="false" />		
+		
+		<!--copyField source="*__facet_text_mv" dest="*__text_mv"  / -->
+		<copyField source="*__fname_an_mv" multiValued="true" dest="*__fname_syn_mv"  />
+		<copyField source="*__lname_an_mv" multiValued="true" dest="*__lname_syn_mv"  />
+		<copyField source="*__fname_an_mv" multiValued="true" dest="*__fname_mv"  />
+		<copyField source="*__lname_an_mv" multiValued="true" dest="*__lname_mv"  />
+		
+		<copyField source="*__fname_an_mv" dest="*__fname_an_rs_mv" />
+		<copyField source="*__lname_an_mv" dest="*__lname_an_rs_mv" />
+		
+		
 	</fields>
 	<similarity class="brightsolid.solr.plugins.BrightSolidSimilarity" />
 	<uniqueKey>Id</uniqueKey>

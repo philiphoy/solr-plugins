@@ -15,12 +15,28 @@ public class TestNameSearch extends SolrTestCaseJ4{
     assertU(adoc("Id","4","name__fname_an","t o","Gender__facet_text","female"));
     assertU(adoc("Id","5","name__fname_an","o t","Gender__facet_text","male"));
     assertU(adoc("Id","6","name__fname_an","threee","Gender__facet_text","male"));
-    assertU(adoc("Id","7","name__fname_an","three"));
+    assertU(adoc("Id","7","name__fname_an","three","name__fname_an_mv","seven"));
     assertU(adoc("Id","8","name__fname_an","-","Gender__facet_text","male"));
 
     assertU(commit());
   }
 
+  public void testaStar() throws Exception {
+	    
+	    assertJQ(req("_query_:{!nameQuery useexact=true usesyn=false useinitial=false usephonetic=false usenull=false f=LastName__lname}a*"),
+	            "/response/docs/[0]/Id=='7'",	           
+	            "/response/numFound==2"
+	            );
+	  }
+  
+  public void testMv() throws Exception {
+	    
+	    assertJQ(req("_query_:{!nameQuery f=name__fname_mv }seven"),
+	            "/response/docs/[0]/Id=='7'",	           
+	            "/response/numFound==2"
+	            );
+	  }
+  
   public void testSyn() throws Exception {
     
     assertJQ(req("_query_:{!nameQuery f=name__fname }won"),
@@ -74,17 +90,17 @@ public class TestNameSearch extends SolrTestCaseJ4{
             );
 
     assertJQ(req("_query_:{!nameQuery f=name__fname }tw*"),
-            "/response/docs/[0]/Id=='3'",
+            "/response/docs/[0]/Id=='2'",
             "/response/numFound==2"
             ); 
 
     assertJQ(req("_query_:{!nameQuery f=name__fname }tw?"),
-            "/response/docs/[0]/Id=='3'",
+            "/response/docs/[0]/Id=='2'",
             "/response/numFound==2"
             );
 
     assertJQ(req("_query_:{!nameQuery usefuzzy=true f=name__fname }t*"),
-            "/response/docs/[0]/Id=='6'",
+            "/response/docs/[0]/Id=='2'",
             "/response/numFound==6"
             );
   }
