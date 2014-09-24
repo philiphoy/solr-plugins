@@ -1,0 +1,2 @@
+*=>LOWER
+?=>LOWER

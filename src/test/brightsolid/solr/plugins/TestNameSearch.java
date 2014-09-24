@@ -9,8 +9,8 @@ public class TestNameSearch extends SolrTestCaseJ4{
   public static void beforeTests() throws Exception {
     initCore("config.xml", "schema.xml");
 
-    assertU(adoc("Id","1","name__fname_an","one","name__lname_an","jones smith"));
-    assertU(adoc("Id","2","name__fname_an","one two","name__lname_an","smith-jones"));
+    assertU(adoc("Id","1","name__fname_an","one","name__lname_an","jones smith","Gender__facet_text","male"));
+    assertU(adoc("Id","2","name__fname_an","one two","name__lname_an","smith-jones","Gender__facet_text","female"));
     assertU(adoc("Id","3","name__fname_an","two one","name__lname_an","bright","Gender__facet_text","unknown"));
     assertU(adoc("Id","4","name__fname_an","t o","Gender__facet_text","female"));
     assertU(adoc("Id","5","name__fname_an","o t","Gender__facet_text","male"));
@@ -23,8 +23,8 @@ public class TestNameSearch extends SolrTestCaseJ4{
 
   public void testaStar() throws Exception {
 	    
-	    assertJQ(req("_query_:{!nameQuery useexact=true usesyn=false useinitial=false usephonetic=false usenull=false f=LastName__lname}a*"),
-	            "/response/docs/[0]/Id=='7'",	           
+	    assertJQ(req("_query_:{!nameQuery useexact=true usesyn=false useinitial=false usephonetic=false usenull=false f=name__lname}j*"),
+	            "/response/docs/[0]/Id=='1'",	           
 	            "/response/numFound==2"
 	            );
 	  }
@@ -107,17 +107,17 @@ public class TestNameSearch extends SolrTestCaseJ4{
 
   public void testNameSearch() throws Exception {
     
-    assertJQ(req("_query_:\"{!nameQuery f=name__lname }smith jones\""), 
+    assertJQ(req("_query_:\"{!nameQuery f=name__lname isSurname=false}smith jones\""), 
             "/response/docs/[0]/Id=='2'",
             "/response/docs/[1]/Id=='1'",
             "/response/numFound==2"
             );
 
-    assertJQ(req("_query_:\"{!nameQuery f=name__fname }\""),           
+    assertJQ(req("_query_:\"{!nameQuery f=name__fname isSurname=false}\""),           
             "/response/numFound==0"
             );
 
-    assertJQ(req("_query_:\"{!nameQuery f=name__fname }o t\""),
+    assertJQ(req("_query_:\"{!nameQuery f=name__fname isSurname=false}o t\""),
             "/response/docs/[0]/Id=='5'",
             "/response/docs/[1]/Id=='4'",
             "/response/docs/[2]/Id=='2'",
@@ -126,7 +126,7 @@ public class TestNameSearch extends SolrTestCaseJ4{
             "/response/numFound==5"
             );
 
-    assertJQ(req("_query_:\"{!nameQuery f=name__fname }o two\""),
+    assertJQ(req("_query_:\"{!nameQuery f=name__fname isSurname=false}o two\""),
             "/response/docs/[0]/Id=='2'",
             "/response/docs/[1]/Id=='5'",
             "/response/docs/[2]/Id=='3'",
@@ -135,7 +135,7 @@ public class TestNameSearch extends SolrTestCaseJ4{
             "/response/numFound==5"
             );
 
-    assertJQ(req("_query_:\"{!nameQuery f=name__fname }two one\""),
+    assertJQ(req("_query_:\"{!nameQuery f=name__fname isSurname=false}two one\""),
             "/response/docs/[0]/Id=='3'",
             "/response/docs/[1]/Id=='2'",
             "/response/docs/[2]/Id=='4'",
@@ -144,7 +144,7 @@ public class TestNameSearch extends SolrTestCaseJ4{
             "/response/numFound==5"
             );
 
-    assertJQ(req("_query_:{!nameQuery f=name__fname }one"),
+    assertJQ(req("_query_:{!nameQuery f=name__fname isSurname=false}one"),
             "/response/docs/[0]/Id=='1'",
             "/response/docs/[1]/Id=='2'",
             "/response/docs/[2]/Id=='3'",
@@ -153,33 +153,41 @@ public class TestNameSearch extends SolrTestCaseJ4{
             "/response/numFound==6"
             );
 
-    assertJQ(req("_query_:{!nameQuery f=name__fname }three"),
+    assertJQ(req("_query_:{!nameQuery f=name__fname isSurname=false}three"),
             "/response/docs/[0]/Id=='7'",
             "/response/numFound==5"
             );
 
-    assertJQ(req("_query_:{!nameQuery usefuzzy=false usephonetic=false f=name__fname }three"),
+    assertJQ(req("_query_:{!nameQuery usefuzzy=false usephonetic=false isSurname=false f=name__fname }three"),
             "/response/docs/[0]/Id=='7'",
             "/response/numFound==4"
             );
     }
 
     public void testNameSearchWithGender() throws Exception {
-        
-      assertJQ(req("_query_:{!nameQuery gendervalue=male f=name__fname }one"),
-              "/response/numFound==4"
+        // gendervalue is the gender to exclude
+      assertJQ(req("_query_:{!nameQuery gendervalue=female isSurname=false f=name__fname }one"),
+              "/response/docs/[0]/Id=='1'",
+              "/response/docs/[1]/Id=='2'",
+              "/response/docs/[2]/Id=='3'",
+              "/response/docs/[3]/Id=='5'",
+              "/response/numFound==5"
               ); 
 
-      assertJQ(req("_query_:{!nameQuery gendervalue=female f=name__fname }one"),
-              "/response/numFound==5"
+      assertJQ(req("_query_:{!nameQuery gendervalue=male isSurname=false f=name__fname }one"),
+              "/response/docs/[0]/Id=='1'",
+              "/response/docs/[1]/Id=='2'",
+              "/response/docs/[2]/Id=='3'",
+              "/response/docs/[3]/Id=='4'",
+              "/response/numFound==4"
               );  
 
-      assertJQ(req("_query_:{!nameQuery gendervalue=female f=name__fname }three"),
+      assertJQ(req("_query_:{!nameQuery gendervalue=female isSurname=false f=name__fname }three"),
               "/response/docs/[0]/Id=='7'",
               "/response/numFound==4"
               );
 
-      assertJQ(req("_query_:{!nameQuery gendervalue=male f=name__fname }three"),
+      assertJQ(req("_query_:{!nameQuery gendervalue=male isSurname=false f=name__fname }three"),
               "/response/docs/[0]/Id=='7'",
               "/response/numFound==2"
               );

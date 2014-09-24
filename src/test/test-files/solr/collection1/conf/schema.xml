@@ -119,7 +119,7 @@
 			 <analyzer type="index">
 				<tokenizer class="solr.KeywordTokenizerFactory"/>
 				<filter class="solr.ASCIIFoldingFilterFactory"/>
-				<filter class="solr.LowerCaseFilterFactory" />			
+				<filter class="solr.LowerCaseFilterFactory" />
 				<filter class="solr.PatternReplaceFilterFactory" pattern=" \s*" replacement="-" replace="all"/>
 				<filter class="solr.TrimFilterFactory" />
 				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" catenateAll="1" stemEnglishPossessive="0" />
@@ -129,7 +129,7 @@
 				<filter class="solr.ASCIIFoldingFilterFactory"/>
 				<filter class="solr.LowerCaseFilterFactory" />
 				<filter class="solr.TrimFilterFactory" />
-				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" stemEnglishPossessive="0" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" stemEnglishPossessive="0" types="delimiterTypes.txt" />
 			</analyzer>
 		</fieldType>
 		<fieldType name="lastname_analysed_rs" class="solr.TextField" positionIncrementGap="100">
